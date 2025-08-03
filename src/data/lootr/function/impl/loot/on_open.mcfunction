@@ -42,13 +42,15 @@ function ~/on_hit:
                     
 
         data modify block ~ ~ ~ Items set value []
-        $loot insert ~ ~ ~ loot $(loot_table)
+        $execute as @p[tag=lootr.player] run loot insert ~ ~ ~ loot $(loot_table)
 
 
 
+tag @s add lootr.player 
 execute anchored eyes positioned ^ ^ ^ run function #bs.raycast:run {with:{
     on_targeted_block: f"function {~/on_hit}",
 }}
+tag @s remove lootr.player 
 
 
 
