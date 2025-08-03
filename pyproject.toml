@@ -24,8 +24,8 @@ load_function = "lootr:impl/load"
 predicate_order = ["custom_model_data", "pulling", "pull", "charged", "firework"]
 
 [tool.beet.meta.weld_deps.deps]
-"itemio" = "1.2.6"
-
+"itemio" = "1.4.1"
+"bookshelf-raycast" = "3.1.0"
 
 [tool.semantic_release]
 major_on_zero = false
@@ -82,8 +82,8 @@ name = "{{ project_id }}_{{ project_version }}_rp_bundled"
 load = "src"
 
 [tool.beet.meta]
-mc_supports = ["1.21.5"]
-minecraft_version = "1.21.5"
+mc_supports = ["1.21.8"]
+minecraft_version = "1.21.8"
 modrinth_id = "lootr"
 
 [tool.beet.meta.mecha]
@@ -95,7 +95,7 @@ match = ["lootr:**"]
 render_size = 256
 load_vanilla = true
 save_namespace = "grappling_hook"
-minecraft_version = "1.21.5"
+minecraft_version = "1.21.8"
 
 
 [tool.beet.meta.smithed.versioning]
