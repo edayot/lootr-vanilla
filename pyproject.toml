@@ -1,0 +1,119 @@
+[tool.poetry]
+name = "template"
+version = "0.1.0"
+description = ""
+authors = ["edayot <pro.e.dayot@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+simple-item-plugin = ">=0.9.1"
+
+
+[tool.poetry.dev-dependencies]
+python-semantic-release = "^8.7.0"
+
+
+[tool.beet.meta.simple_item_plugin]
+custom_model_data = 1430000
+generate_guide = true
+tick_function = "impl/tick"
+load_function = "impl/load"
+
+[tool.beet.meta.model_merging]
+predicate_order = ["custom_model_data", "pulling", "pull", "charged", "firework"]
+
+[tool.beet.meta.weld_deps.deps]
+"itemio" = "1.2.6"
+
+
+[tool.semantic_release]
+major_on_zero = false
+build_command = '''
+    beet -s data_pack.zipped=true \
+         -s resource_pack.zipped=true \
+         -s meta.weld_deps.enabled=false \
+         -s data_pack.name="{{ project_id }}_{{ project_version }}_dp" \
+         -s resource_pack.name="{{ project_id }}_{{ project_version }}_rp"
+    beet -s data_pack.zipped=true \
+         -s resource_pack.zipped=true \
+         -s meta.weld_deps.enabled=true && \
+         -s data_pack.name="{{ project_id }}_{{ project_version }}_dp_bundled" \
+         -s resource_pack.name="{{ project_id }}_{{ project_version }}_rp_bundled"
+'''
+dist_path = "build"
+version_toml = ["pyproject.toml:tool.poetry.version"]
+version_source = "commit"
+
+remove_dist = false
+tag_format = "v{version}"
+
+[tool.semantic_release.publish]
+dist_glob_patterns = ["build/*.zip"]
+upload_to_vcs_release = true
+
+
+
+[tool.beet]
+output = "build"
+
+pipeline = [
+    "simple_item_plugin",
+    "template",
+]
+require=[
+    "bolt",
+    "weld_deps",
+    "mecha.contrib.relative_location",
+    "mecha.contrib.nested_location",
+]
+
+ignore = [
+    "stable_cache.json"
+]
+
+[tool.beet.data_pack]
+name = "{{ project_id }}_{{ project_version }}_dp_bundled"
+load = "src"
+pack_format = 48
+
+[tool.beet.resource_pack]
+name = "{{ project_id }}_{{ project_version }}_rp_bundled"
+load = "src"
+
+[tool.beet.meta]
+mc_supports = ["1.21.5"]
+minecraft_version = "1.21.5"
+modrinth_id = "template"
+
+[tool.beet.meta.mecha]
+multiline = true
+match = ["template:**"]
+
+
+[tool.beet.meta.model_resolver]
+render_size = 256
+load_vanilla = true
+save_namespace = "grappling_hook"
+minecraft_version = "1.21.5"
+
+
+[tool.beet.meta.smithed.versioning]
+scheduled_paths="impl/tick"
+
+[tool.beet.meta.smithed.versioning.lantern_load]
+step="load"
+tag_path="load"
+function_path="impl/test_load"
+
+[tool.beet.meta.smithed.versioning.refactor]
+match="{{ project_id }}:*"
+find="{{ project_id }}:impl/"
+replace="{{ project_id }}:v{{ version }}/"
+
+
+[tool.beet.meta.smithed.versioning.api]
+match="{{ project_id }}:v{{ version }}"
+implementation_prefix="{{ project_id }}:v{{ version }}/"
+version_check_path="v{{ version }}/calls"
+tag_path="calls"
