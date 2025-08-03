@@ -1,6 +1,6 @@
-# WeldDeps Template
+# WeldDeps lootr
 
-This readme will show you how to use the WeldDeps template to create a new datapack project.
+This readme will show you how to use the WeldDeps lootr to create a new datapack project.
 
 
 ## Getting Started

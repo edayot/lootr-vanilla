@@ -1,0 +1,1 @@
+tellraw @s {"text":f"[Loaded lootr v{ctx.project_version}]","color":"green"}
