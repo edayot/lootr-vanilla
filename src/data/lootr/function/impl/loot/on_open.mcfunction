@@ -6,6 +6,12 @@ data modify storage lootr:main temp.UUID set from entity @s UUID
 
 function ~/on_hit:
     execute unless data block ~ ~ ~ components.minecraft:custom_data.lootr run return fail
+    execute 
+        align xyz 
+        positioned ~.5 ~.5 ~.5
+        unless entity @n[tag=lootr.barrel, distance=..0.5]
+        run summon item_display ~ ~ ~ {Tags:["lootr.barrel"]}
+
     data modify block ~ ~ ~ lock set value {items:["minecraft:diamond"]}
     setblock ~ ~1 ~ gold_block
 

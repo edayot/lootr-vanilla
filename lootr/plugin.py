@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, NotRequired, TypedDict
 from beet import Context
 from beet.contrib.vanilla import Vanilla
 from model_resolver.utils import resolve_key
@@ -6,7 +6,9 @@ from copy import deepcopy
 from nbtlib import Compound, parse_nbt
 from nbtlib.tag import List, Double
 from nbtlib.contrib.minecraft.structure import StructureFileData
+from numpy import flatiter
 from tqdm import tqdm
+import re
 
 
 
@@ -31,8 +33,57 @@ def process_palette(palette: list[Any], key: str):
     return to_replace, data_mode, chest_compound
 
 
+class Replacer(TypedDict):
+    loot_table: dict[str, str]
+    offset: NotRequired[bool]
+
+
+STRUCTURE_TO_LOOT_TABLE: dict[str, Replacer] = {
+    r"minecraft:igloo/*": {
+        "loot_table": {
+            "chest": "minecraft:chests/igloo_chest"
+        },
+        "offset": True,
+    },
+    r"minecraft:end_city/*": {
+        "loot_table": {
+            "Chest": "minecraft:chests/end_city_treasure",
+            "Elytra": "lootr:elytra",
+        },
+        "offset": True,
+    },
+    r"minecraft:woodland_mansion/*": {
+        "loot_table": {
+            "ChestSouth": "minecraft:chests/woodland_mansion",
+            "ChestNorth": "minecraft:chests/woodland_mansion",
+            "ChestEast": "minecraft:chests/woodland_mansion",
+            "ChestWest": "minecraft:chests/woodland_mansion",
+        },
+    },
+    "minecraft:underwater_ruin/*": {
+        "loot_table": {
+            "chest": "lootr:random_ocean_ruins",
+        },
+    },
+    "minecraft:shipwreck/*": {
+        "loot_table": {
+            "map_chest": "minecraft:chests/shipwreck_map",
+            "treasure_chest": "minecraft:chests/shipwreck_treasure",
+            "supply_chest": "minecraft:chests/shipwreck_supply"
+        },
+    },
+}
+
+def get_replacer_by_key(key: str) -> Replacer | None:
+    for pattern, replacer in STRUCTURE_TO_LOOT_TABLE.items():
+        if re.compile(pattern).match(key):
+            return replacer
+    return None
+
 def replace_data_mode(data: StructureFileData, data_mode: set[int], key: str, chest_compound: int):
     if len(data_mode) == 0:
+        return False
+    if not (replacer := get_replacer_by_key(key)):
         return False
     # set of indexs to delete in the list
     to_delete: set[int] = set()
@@ -46,14 +97,14 @@ def replace_data_mode(data: StructureFileData, data_mode: set[int], key: str, ch
             continue
         if not (metadata := nbt.get("metadata")):
             continue
-        if resolve_key(key) == "minecraft:igloo/bottom":
-            if metadata == "chest":
-                to_delete.add(index)
-                blockPos = deepcopy(block["pos"])
-                blockPos = tuple(int(x) for x in blockPos)
-                assert len(blockPos) == 3
+        if loot_table := replacer["loot_table"].get(metadata):
+            to_delete.add(index)
+            blockPos = deepcopy(block["pos"])
+            blockPos = tuple(int(x) for x in blockPos)
+            assert len(blockPos) == 3
+            if replacer.get("offset"):
                 blockPos = (blockPos[0], blockPos[1] - 1, blockPos[2])
-                to_modify[blockPos] = "minecraft:chests/igloo_chest"
+            to_modify[blockPos] = loot_table
     
     for index, block in enumerate(data["blocks"]):
         block: StructureFileData.Block
@@ -69,9 +120,10 @@ def replace_data_mode(data: StructureFileData, data_mode: set[int], key: str, ch
         block = StructureFileData.Block({
             "state": chest_compound,
             "pos": blockPos,
-            "nbt": parse_nbt(f'{{"minecraft:custom_data": {{lootr: {{loot_table: "{loot_table}"}} }}}}')
+            "nbt": parse_nbt(f'{{components:{{"minecraft:custom_data": {{lootr: {{loot_table: "{loot_table}"}} }}}}}}')
         })
         data["blocks"].append(block)
+        add_entity(data, blockPos)
     return True
     
 
